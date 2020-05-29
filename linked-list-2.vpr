@@ -1,0 +1,86 @@
+/** 
+    SINGLY LINKED LIST 2 - USING LIST SEGMENTS
+*/
+
+/* List Nodes */
+
+field elem: Int
+field next: Ref
+
+predicate lseg(l: Ref, r: Ref) {
+  l != r ==> acc(l.elem) && acc(l.next) && acc(lseg(l.next, r))
+}
+
+// Takes a list segment and extends it by one
+method extendLseg(l: Ref, r: Ref)
+    requires lseg(l, r) && acc(r.next) && acc(r.elem)
+    ensures lseg(l, old(r.next))
+{
+    if (l == r) {
+        fold lseg(r.next, r.next)
+        fold lseg(l, r.next)
+    } else {
+        unfold lseg(l, r)
+        
+        var extended : Ref := r.next
+        extendLseg(l.next, r)
+
+        fold lseg(l, extended)
+    }
+}
+
+/* Reverses a singly-linked list from the l up to but not including r. Returns the new head of the list. */
+method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
+    requires lseg(l, r)
+    ensures lseg(res, r)
+{
+    unfold lseg(l, r)
+    if (l.next == r) {
+        res := l
+    } else {
+        var p : Ref := null
+        p := reverseRecur(l.next, r)
+        res := p
+
+        // Don't have access to l.next
+        // Try to access by traversing list starting at p until node before r
+        unfold lseg(p, r)
+        while (p.next != r)
+            invariant acc(p.elem) && acc(p.next) && lseg(p.next, r)
+        {
+            p := p.next
+            unfold lseg(p, r)
+        }
+        
+        p.next := l     // p == l.next
+                        // should be the equivalent of l.next.next := l
+        l.next := r
+        
+        // TODO: Fold everything back up?? 
+        
+    }
+    
+    fold lseg(res, r)
+}
+
+/* Lists */
+
+
+field head: Ref
+
+predicate List(this: Ref) {
+  acc(this.head) && acc(lseg(this.head, null))
+}
+
+method reverse(this: Ref)
+    requires acc(List(this))
+    ensures acc(List(this))
+{
+    unfold acc(List(this)) 
+    
+    var newHead : Ref := null
+    newHead := reverseRecur(this.head, null)
+    this.head := newHead
+    
+    fold acc(List(this))
+}
