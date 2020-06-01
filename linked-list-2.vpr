@@ -44,16 +44,17 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
 
         // Don't have access to l.next
         // Try to access by traversing list starting at p until node before r
-        unfold lseg(p, r)
-        while (p.next != r)
-            invariant acc(p.elem) && acc(p.next) && lseg(p.next, r)
-        {
-            p := p.next
-            unfold lseg(p, r)
-        }
+        // unfold lseg(p, r)
+        // while (p.next != r)
+        //     invariant acc(p.elem) && acc(p.next) && lseg(p.next, r)
+        // {
+        //     p := p.next
+        //     unfold lseg(p, r)
+        // }
         
         p.next := l     // p == l.next
                         // should be the equivalent of l.next.next := l
+        // l.next.next := l
         l.next := r
         
         // TODO: Fold everything back up?? 
@@ -61,6 +62,47 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
     }
     
     fold lseg(res, r)
+}
+
+
+method insertNode(l: Ref, index: Int, val: Int) returns (res: Ref)
+    requires lseg(l, null)
+    requires index >= 0 && index <= lengthNodes(l, null)
+    ensures lseg(res, null)
+    ensures old(lengthNodes(l, null)) + 1 == lengthNodes(res, null)
+    ensures contentNodes(res, null) == 
+        old(contentNodes(l, null)[..index] ++ Seq(val) ++ contentNodes(l, null)[index..])
+{
+    if (index == 0) {
+        res := new(*)
+        res.elem := val
+        res.next := l
+        fold lseg(res, null)
+    } else {
+        var tmp: Ref
+        
+        unfold lseg(l, null)
+        tmp := insertNode(l.next, index - 1, val)
+        l.next := tmp
+        res := l
+        fold lseg(l, null)
+    }
+}
+
+function lengthNodes(l: Ref, r: Ref) : Int
+    requires lseg(l, r)
+    ensures l == r ==> result == 0
+    ensures l != r ==> result > 0
+{
+    l == r ? 0 : 1 + unfolding lseg(l, r) in lengthNodes(l.next, r)
+}
+
+function contentNodes(l: Ref, r: Ref) : Seq[Int]
+    requires lseg(l, r)
+    ensures  l == r ==> result == Seq[Int]()
+    ensures  l != r ==> 0 < |result| && |result| == lengthNodes(l, r)
+{
+    l == r ? Seq[Int]() : unfolding lseg(l,r) in Seq(l.elem) ++ contentNodes(l.next, r)
 }
 
 /* Lists */
@@ -83,4 +125,34 @@ method reverse(this: Ref)
     this.head := newHead
     
     fold acc(List(this))
+}
+
+/* insert a new element before the element at index */
+method insert(this: Ref, index: Int, val: Int)
+    requires acc(List(this))
+    requires index >= 0 && index <= length(this)
+    ensures acc(List(this))
+    ensures old(length(this)) + 1 == length(this)
+    ensures content(this) == 
+        old(content(this)[..index] ++ Seq(val) ++ content(this)[index..])
+{
+    unfold List(this)
+    var newHead : Ref := null
+    newHead := insertNode(this.head, index, val)
+    this.head := newHead
+    fold List(this)
+}
+
+function length(this: Ref) : Int
+    requires List(this)
+    ensures unfolding List(this) in this.head == null ==> result == 0
+    ensures unfolding List(this) in this.head != null ==> result > 0
+{
+    unfolding List(this) in lengthNodes(this.head, null)
+}
+
+function content(this: Ref) : Seq[Int]
+    requires List(this)
+{
+    unfolding acc(List(this)) in contentNodes(this.head, null)    
 }
