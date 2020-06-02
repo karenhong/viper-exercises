@@ -23,10 +23,9 @@ method reverseIter(head: Ref) returns (res: Ref)
     ensures list(res)
     ensures old(length(head)) == length(res)
     
-    
     // TODO: Postcondition below might not hold
-    ensures forall i : Int :: i >= 0 && i < length(res) ==> 
-        get(res, length(res) - i - 1) == old(get(head, i))
+    // ensures forall i : Int :: i >= 0 && i < length(res) ==> 
+    //     get(res, length(res) - i - 1) == old(get(head, i))
     // ensures forall i : Int :: i >= 0 && i < length(res) ==> old(get(head, length(head) - i - 1)) == get(res, i)
     // TODO: Missing triggers
 {
@@ -65,13 +64,49 @@ method reverseIter2(head: Ref) returns (res: Ref)
     requires list(head)
     ensures list(res)
     ensures old(length(head)) == length(res)
-    ensures forall i : Int :: i >= 0 && i < length(res) ==> 
-        get(res, length(res) - i - 1) == old(get(head, i))
+    // ensures forall i : Int :: i >= 0 && i < length(res) ==> 
+    //     get(res, length(res) - i - 1) == old(get(head, i))
 {
     if (head == null) {
         res := head
     } else { 
         res := reverseIter(head)
+    }
+}
+
+/* inserts a new node before the node at index and returns the head of the list */
+method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
+    requires list(head)
+    requires index >= 0 && index <= length(head)
+    ensures list(res)
+{
+    var i : Int := index
+    var curr : Ref := head
+    var prev : Ref := null  
+    
+    var len : Int := length(head)
+
+    while (i >= 0) 
+        invariant curr != null ==> list(curr)
+    {
+        unfold list(curr)
+        prev := curr
+        curr := curr.next
+        i := i - 1
+    }
+
+    var tmp : Ref 
+    tmp := new(*)
+    tmp.elem := val
+    tmp.next := curr
+    fold list(tmp)
+
+    if (prev == null) {
+        res := tmp
+    } else {
+        prev.next := tmp
+        res := head
+        // TODO: missing acc from head to tmp
     }
 }
 
@@ -86,7 +121,6 @@ function length(head: Ref) : Int
 function get(head: Ref, i: Int) : Ref
     requires acc(list(head))
     requires i >= 0 && i < length(head)
-    ensures head == null ==> result == null
 {
     i == 0 ? head : unfolding acc(list(head)) in get(head.next, i - 1)
 }

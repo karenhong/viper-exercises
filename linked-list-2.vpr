@@ -44,13 +44,13 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
 
         // Don't have access to l.next
         // Try to access by traversing list starting at p until node before r
-        // unfold lseg(p, r)
-        // while (p.next != r)
-        //     invariant acc(p.elem) && acc(p.next) && lseg(p.next, r)
-        // {
-        //     p := p.next
-        //     unfold lseg(p, r)
-        // }
+        unfold lseg(p, r)
+        while (p.next != r)
+            invariant acc(p.elem) && acc(p.next) && lseg(p.next, r)
+        {
+            p := p.next
+            unfold lseg(p, r)
+        }
         
         p.next := l     // p == l.next
                         // should be the equivalent of l.next.next := l
