@@ -31,37 +31,22 @@ method extendLseg(l: Ref, r: Ref)
 
 /* Reverses a singly-linked list from the l up to but not including r. Returns the new head of the list. */
 method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
-    requires lseg(l, r)
-    ensures lseg(res, r)
+    requires lseg(l, r) && (r != null ==> acc(r.next) && acc(r.elem))
+    ensures lseg(res, l) && (l != null ==> acc(l.next) && acc(l.elem))
 {
     unfold lseg(l, r)
     if (l.next == r) {
         res := l
     } else {
-        var p : Ref := null
+        var p : Ref
         p := reverseRecur(l.next, r)
-        res := p
-
-        // Don't have access to l.next
-        // Try to access by traversing list starting at p until node before r
-        unfold lseg(p, r)
-        while (p.next != r)
-            invariant acc(p.elem) && acc(p.next) && lseg(p.next, r)
-        {
-            p := p.next
-            unfold lseg(p, r)
-        }
-        
-        p.next := l     // p == l.next
-                        // should be the equivalent of l.next.next := l
-        // l.next.next := l
+        l.next.next := l
         l.next := r
-        
-        // TODO: Fold everything back up?? 
-        
+
+        extendLseg(r, l.next)
+        res := p
     }
-    
-    fold lseg(res, r)
+    // fold lseg(res, r)
 }
 
 
