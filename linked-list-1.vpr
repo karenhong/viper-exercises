@@ -84,29 +84,46 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
     
     var len : Int := length(head)
     
+    package list(curr) --* list(head)
+    
     while (i >= 0) 
         invariant curr != null ==> list(curr)
+        invariant prev != null ==> list(curr) --* list(prev)
+        
+        // invariant prev != null ==> list(prev) --* list(head)
+        invariant prev == null ==> list(curr) --* list(head)
     {
         unfold list(curr)
         prev := curr
 
         curr := curr.next
         i := i - 1
+
+        package list(curr) --* list(prev)
+        {
+            fold list(prev)
+        }
+
     }
 
     var tmp : Ref 
     tmp := new(*)
     tmp.elem := val
     tmp.next := curr
-    fold list(tmp)
+    
+    package list(curr) && acc(tmp.elem) && acc(tmp.next) --* list(prev) {
+        apply list(curr) --* list(prev)
+    }
 
     if (prev == null) {    
         res := tmp
-    } else {
+    } else {        
+        apply list(curr) && acc(tmp.elem) && acc(tmp.next) --* list(prev)
+        unfold list(prev)
         prev.next := tmp
-        res := head
-        // TODO: missing acc from head to tmp
-    }   
+        res := head        
+    }
+
 }
 
 function length(head: Ref) : Int

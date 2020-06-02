@@ -33,7 +33,6 @@ method extendLseg(l: Ref, r: Ref)
 method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
     requires acc(l.next) && acc(l.elem) && lseg(l.next, r)
     ensures lseg(res, l) && (acc(l.next) && acc(l.elem))
-    ensures l.next == r
 {
     if (l.next == r) {
         res := l
@@ -59,11 +58,11 @@ method reverse(this: Ref)
     unfold acc(List(this)) 
     
     var newHead : Ref := null
+    var end : Ref := null
     
-    unfold lseg(this.head, null)
-    newHead := reverseRecur(this.head, null)
-
-    // extendLseg(newHead, this.head)
+    unfold lseg(this.head, end)
+    newHead := reverseRecur(this.head, end)
+    
     this.head := newHead
 
     fold acc(List(this))
