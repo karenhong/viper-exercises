@@ -23,11 +23,8 @@ method reverseIter(head: Ref) returns (res: Ref)
     ensures list(res)
     ensures old(length(head)) == length(res)
     
-    // TODO: Postcondition below might not hold
-    // ensures forall i : Int :: i >= 0 && i < length(res) ==> 
-    //     get(res, length(res) - i - 1) == old(get(head, i))
-    // ensures forall i : Int :: i >= 0 && i < length(res) ==> old(get(head, length(head) - i - 1)) == get(res, i)
-    // TODO: Missing triggers
+    ensures forall i : Int :: i >= 0 && i < length(res) ==> 
+        get(res, length(res) - i - 1) == old(get(head, i))
 {
     var prev : Ref := null
     var curr : Ref := head
@@ -41,8 +38,8 @@ method reverseIter(head: Ref) returns (res: Ref)
         invariant curr == null ==> prev != null
         invariant prev != null ==> list(prev)
         invariant length(prev) + length(curr) == len
-        // TODO: fix invariant below
-        // invariant forall i : Int :: i >= 0 && i < length(prev) ==> old(get(head, i)) == get(prev, length(prev) - 1 - i)
+        invariant forall i : Int :: i >= length(prev) && i < len ==> get(curr, i - length(prev)) == old(get(head, i))
+        invariant forall j : Int :: j >= 0 && j < length(prev) ==> old(get(head, j)) == get(prev, length(prev) - 1 - j)
     {
         unfold acc(list(curr))
 
@@ -54,7 +51,7 @@ method reverseIter(head: Ref) returns (res: Ref)
         prev := curr
         curr := nextTmp
     }
-
+    
     res := prev
 }
 
@@ -64,8 +61,8 @@ method reverseIter2(head: Ref) returns (res: Ref)
     requires list(head)
     ensures list(res)
     ensures old(length(head)) == length(res)
-    // ensures forall i : Int :: i >= 0 && i < length(res) ==> 
-    //     get(res, length(res) - i - 1) == old(get(head, i))
+    ensures forall i : Int :: i >= 0 && i < length(res) ==> 
+        get(res, length(res) - i - 1) == old(get(head, i))
 {
     if (head == null) {
         res := head
@@ -81,16 +78,18 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
     ensures list(res)
 {
     var i : Int := index
+    
     var curr : Ref := head
     var prev : Ref := null  
     
     var len : Int := length(head)
-
+    
     while (i >= 0) 
         invariant curr != null ==> list(curr)
     {
         unfold list(curr)
         prev := curr
+
         curr := curr.next
         i := i - 1
     }
@@ -101,13 +100,13 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
     tmp.next := curr
     fold list(tmp)
 
-    if (prev == null) {
+    if (prev == null) {    
         res := tmp
     } else {
         prev.next := tmp
         res := head
         // TODO: missing acc from head to tmp
-    }
+    }   
 }
 
 function length(head: Ref) : Int
