@@ -31,24 +31,43 @@ method extendLseg(l: Ref, r: Ref)
 
 /* Reverses a singly-linked list from the l up to but not including r. Returns the new head of the list. */
 method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
-    requires lseg(l, r) && (r != null ==> acc(r.next) && acc(r.elem))
-    ensures lseg(res, l) && (l != null ==> acc(l.next) && acc(l.elem))
+    requires acc(l.next) && acc(l.elem) && lseg(l.next, r)
+    ensures lseg(res, l) && (acc(l.next) && acc(l.elem))
+    ensures l.next == r
 {
-    unfold lseg(l, r)
     if (l.next == r) {
         res := l
+        fold lseg(res, l)
     } else {
+        unfold lseg(l.next, r)
+        
         var p : Ref
         p := reverseRecur(l.next, r)
-        l.next.next := l
-        l.next := r
 
-        extendLseg(r, l.next)
+        l.next.next := l
         res := p
+        extendLseg(res, l.next)
+        
+        l.next := r
     }
-    // fold lseg(res, r)
 }
 
+method reverse(this: Ref)
+    requires acc(List(this))
+    ensures acc(List(this))
+{
+    unfold acc(List(this)) 
+    
+    var newHead : Ref := null
+    
+    unfold lseg(this.head, null)
+    newHead := reverseRecur(this.head, null)
+
+    // extendLseg(newHead, this.head)
+    this.head := newHead
+
+    fold acc(List(this))
+}
 
 method insertNode(l: Ref, index: Int, val: Int) returns (res: Ref)
     requires lseg(l, null)
@@ -97,19 +116,6 @@ field head: Ref
 
 predicate List(this: Ref) {
   acc(this.head) && acc(lseg(this.head, null))
-}
-
-method reverse(this: Ref)
-    requires acc(List(this))
-    ensures acc(List(this))
-{
-    unfold acc(List(this)) 
-    
-    var newHead : Ref := null
-    newHead := reverseRecur(this.head, null)
-    this.head := newHead
-    
-    fold acc(List(this))
 }
 
 /* insert a new element before the element at index */
