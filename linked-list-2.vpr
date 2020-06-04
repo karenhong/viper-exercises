@@ -32,23 +32,34 @@ method extendLseg(l: Ref, r: Ref)
 /* Reverses a singly-linked list from the l up to but not including r. Returns the new head of the list. */
 method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
     requires acc(l.next) && acc(l.elem) && lseg(l.next, r)
-    ensures lseg(res, l) && (acc(l.next) && acc(l.elem))
+    ensures lseg(res, l) && acc(l.next) && acc(l.elem)
+    ensures l.next == r
+    
+    // ensures old(l.next) == r ==> lengthNodes(res, l) == 0
+    // ensures old(lengthNodes(l.next, r)) == lengthNodes(res, l)
 {
     if (l.next == r) {
         res := l
+        l.next := r
         fold lseg(res, l)
     } else {
+        // assume false
         unfold lseg(l.next, r)
         
         var p : Ref
+        
         p := reverseRecur(l.next, r)
-
         l.next.next := l
+
         res := p
         extendLseg(res, l.next)
         
         l.next := r
     }
+
+    // assert old(l.next) == r ==> lengthNodes(res, l) == 0
+    // assert len == old(lengthNodes(l.next, r)) + 1
+    // assert old(lengthNodes(l.next, r)) == lengthNodes(res, l)
 }
 
 method reverse(this: Ref)
@@ -56,14 +67,16 @@ method reverse(this: Ref)
     ensures acc(List(this))
 {
     unfold acc(List(this)) 
-    
-    var newHead : Ref := null
-    var end : Ref := null
-    
-    unfold lseg(this.head, end)
-    newHead := reverseRecur(this.head, end)
-    
-    this.head := newHead
+
+    if (this.head != null) {
+        var newHead : Ref := null
+
+        unfold lseg(this.head, null)
+        newHead := reverseRecur(this.head, null)
+        
+        extendLseg(newHead, this.head)
+        this.head := newHead
+    }
 
     fold acc(List(this))
 }

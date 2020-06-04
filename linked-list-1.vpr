@@ -77,53 +77,84 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
     requires index >= 0 && index <= length(head)
     ensures list(res)
 {
-    var i : Int := index
-    
-    var curr : Ref := head
-    var prev : Ref := null  
-    
-    var len : Int := length(head)
-    
-    package list(curr) --* list(head)
-    
-    while (i >= 0) 
-        invariant curr != null ==> list(curr)
-        invariant prev != null ==> list(curr) --* list(prev)
-        
-        // invariant prev != null ==> list(prev) --* list(head)
-        invariant prev == null ==> list(curr) --* list(head)
-    {
-        unfold list(curr)
-        prev := curr
-
-        curr := curr.next
-        i := i - 1
-
-        package list(curr) --* list(prev)
-        {
-            fold list(prev)
-        }
-
-    }
-
     var tmp : Ref 
     tmp := new(*)
     tmp.elem := val
-    tmp.next := curr
     
-    package list(curr) && acc(tmp.elem) && acc(tmp.next) --* list(prev) {
-        apply list(curr) --* list(prev)
-    }
-
-    if (prev == null) {    
+    if (head == null) {
+        tmp.next := null
         res := tmp
-    } else {        
-        apply list(curr) && acc(tmp.elem) && acc(tmp.next) --* list(prev)
-        unfold list(prev)
-        prev.next := tmp
-        res := head        
-    }
+        fold list(res)
+    } else {
+        var i : Int := index
+    
+        var len : Int := length(head)
+        
+        unfold list(head)
+        
+        var prev : Ref := head
 
+        if (head.next != null) {
+            unfold list(head.next)
+            var curr : Ref := head.next
+            var nextNode : Ref := head.next.next
+            fold list(head.next)
+
+            assert acc(prev.next)
+
+            package acc(prev.next) && acc(prev.elem) &&
+                    acc(curr.next) && acc(curr.elem) && 
+                    list(nextNode) && curr.next == nextNode && prev.next == curr 
+                    --* acc(head.next) && acc(head.elem) {
+                fold list(curr)
+            }
+
+            while (i > 1) 
+                invariant list(curr)
+                invariant acc(prev.next) && acc(prev.elem)
+                invariant unfolding list(curr) in curr.next == nextNode
+                invariant prev.next == curr
+                invariant unfolding list(curr) in curr.next == nextNode
+                invariant acc(prev.next) && acc(prev.elem) && acc(curr.next) && acc(curr.elem) && 
+                    list(nextNode) && curr.next == nextNode && prev.next == curr 
+                    --* acc(head.next) && acc(head.elem)
+            {
+                unfold list(curr)
+                
+                inhale curr.next != null
+                unfold list(curr.next)
+                prev := curr
+                curr := nextNode
+                nextNode := nextNode.next
+                i := i - 1
+                fold list(curr)
+
+                // package acc(curr.next) && acc(curr.elem) && list(nextNode) && curr.next == nextNode --* acc(head.next) && acc(head.elem)
+                // {
+                //     fold list(curr)
+                //     apply acc(prev.next) && acc(prev.elem) && acc(curr.next) && acc(curr.elem) && 
+                //         list(nextNode) && curr.next == nextNode && prev.next == curr 
+                //         --* acc(head.next) && acc(head.elem)
+                // }
+                
+            }
+        }
+
+        
+        // package list(curr) --* acc(head.next) && acc(head.elem)
+
+        // unfold list(prev)
+
+
+        // package list(curr) && acc(tmp.elem) && acc(tmp.next) --* list(prev) {
+        //     apply list(curr) --* list(prev)
+        // }
+        // apply list(curr) && acc(tmp.elem) && acc(tmp.next) --* list(prev)
+        // unfold list(prev)
+        // prev.next := tmp
+        // res := head        
+        // tmp.next := curr
+    }
 }
 
 function length(head: Ref) : Int
