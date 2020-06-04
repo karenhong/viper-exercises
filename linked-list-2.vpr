@@ -35,8 +35,8 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
     ensures lseg(res, l) && acc(l.next) && acc(l.elem)
     ensures l.next == r
     
-    // ensures old(l.next) == r ==> lengthNodes(res, l) == 0
-    // ensures old(lengthNodes(l.next, r)) == lengthNodes(res, l)
+    ensures old(l.next) == r ==> lengthNodes(res, l) == 0
+    ensures old(lengthNodes(l.next, r)) == lengthNodes(res, l)
 {
     if (l.next == r) {
         res := l
@@ -49,6 +49,8 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
         var p : Ref
         
         p := reverseRecur(l.next, r)
+        // assert lengthNodes(p, l.next) + 1 == old(lengthNodes(l.next, r))
+        
         l.next.next := l
 
         res := p
