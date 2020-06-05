@@ -71,11 +71,55 @@ method reverseIter2(head: Ref) returns (res: Ref)
     }
 }
 
+method get_reference(head: Ref, index: Int) returns (res: Ref)
+    requires head != null ==> list(head)
+    requires index >= 0 && index < length(head)
+    ensures list(head)
+{
+    if (head == null || index == 0) {
+        res := head
+    } else {
+        unfold list(head)
+        var prev : Ref := head
+        var curr : Ref := head.next
+        var i : Int := index
+
+        package list(curr) --* list(head)
+        {
+            fold list(head)
+        }
+
+        while (i > 1)
+            invariant list(curr)
+            invariant length(curr) >= i
+            invariant list(curr) --* list(head)
+        {
+            unfold list(curr)
+            prev := curr
+            curr := curr.next
+            i := i - 1
+
+            package list(curr) --* list(head)
+            {
+                fold list(prev)
+                apply list(prev) --* list(head)
+            }
+        }
+        
+        apply list(curr) --* list(head)
+        res := curr
+    }
+}
+
+
 /* inserts a new node before the node at index and returns the head of the list */
 method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
     requires list(head)
     requires index >= 0 && index <= length(head)
     ensures list(res)
+    //  forall i : Int :: i >= length(prev) && i < len ==> get(curr, i - length(prev)) == old(get(head, i))
+    // ensures old(length(head)) + 1 == length(res)
+    // ensures forall i : Int :: i >= 0 && i < index ==> old(get(head, i)) == get(res, i)
 {
     var tmp : Ref 
     tmp := new(*)
@@ -104,6 +148,7 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
             invariant nextNode != null ==> list(nextNode)
             invariant i - 2 < length(nextNode)
             invariant curr.next == nextNode
+            invariant length(nextNode) + 1  == i + old(length(head)) - index
             invariant acc(curr.next) && acc(curr.elem) && list(curr.next) --* list(head)
         {
             prev := curr
@@ -113,21 +158,20 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
                 unfold list(nextNode)
                 nextNode := nextNode.next
             }
-
             i := i - 1
-
             package acc(curr.next) && acc(curr.elem) && list(curr.next) --* list(head)
             {
                 fold list(curr)
-                apply acc(prev.next) && acc(prev.elem) && list(prev.next) --* list(head)
+                apply acc(prev.next) && acc(prev.elem) && list(prev.next) --* list(head) 
             }
         }
+
         curr.next := tmp
         tmp.next := nextNode
         res := head
         fold list(tmp)
         
-        apply acc(curr.next) && acc(curr.elem) && list(curr.next) --* list(head)   
+        apply acc(curr.next) && acc(curr.elem) && list(curr.next) --* list(head)
     }
 }
 
@@ -144,4 +188,12 @@ function get(head: Ref, i: Int) : Ref
     requires i >= 0 && i < length(head)
 {
     i == 0 ? head : unfolding acc(list(head)) in get(head.next, i - 1)
+}
+
+function content(head: Ref) : Seq[Int]
+    requires head != null ==> acc(list(head))
+    ensures length(head) == |result|
+{
+    head == null ? Seq[Int]() : 
+        unfolding list(head) in Seq(head.elem) ++ content(head.next)   
 }
