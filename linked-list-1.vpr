@@ -76,30 +76,37 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
     requires index >= 0 && index < length(head)
     ensures list(res)
     ensures list(res) --* list(head)
+    ensures old(length(head)) - index == length(res)
 {
     if (index == 0) {
         res := head
         package list(res) --* list(head)
     } else {
+        assume false
+        var len : Int := length(head)
         unfold list(head)
         var prev : Ref := head
         var curr : Ref := head.next
-        var i : Int := index
+        var i : Int := 1
 
         package list(curr) --* list(head)
         {
             fold list(head)
         }
 
-        while (i > 1)
-            invariant list(curr)
-            invariant length(curr) >= i
+        while (i != index - 1)
+            invariant curr != null ==> list(curr)
+            invariant index < old(length(head))
             invariant list(curr) --* list(head)
+            invariant length(curr) == len 
+            invariant old(length(head)) - i == length(curr)
         {
+            len := length(curr)
+            
             unfold list(curr)
             prev := curr
             curr := curr.next
-            i := i - 1
+            i := i + 1
 
             package list(curr) --* list(head)
             {
@@ -107,7 +114,7 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
                 apply list(prev) --* list(head)
             }
         }
-        
+
         res := curr
     }
 }
@@ -116,6 +123,8 @@ method refactoredInsert(head: Ref, index: Int, val: Int) returns (res: Ref)
     requires list(head)
     requires index >= 0 && index <= length(head)
     ensures list(res)
+    // ensures old(length(head)) + 1 == length(res)
+    // ensures forall i : Int :: i >= 0 && i < index ==> old(get(head, i)) == get(res, i)
 {
     var tmp : Ref 
     tmp := new(*)
@@ -139,7 +148,7 @@ method refactoredInsert(head: Ref, index: Int, val: Int) returns (res: Ref)
         fold list(tmp)
         fold list(curr)
         apply list(curr) --* list(head)
-    }    
+    }
 }
 
 
@@ -148,7 +157,6 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
     requires list(head)
     requires index >= 0 && index <= length(head)
     ensures list(res)
-    //  forall i : Int :: i >= length(prev) && i < len ==> get(curr, i - length(prev)) == old(get(head, i))
     // ensures old(length(head)) + 1 == length(res)
     // ensures forall i : Int :: i >= 0 && i < index ==> old(get(head, i)) == get(res, i)
 {
