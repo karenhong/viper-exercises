@@ -82,27 +82,21 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
         res := head
         package list(res) --* list(head)
     } else {
-        assume false
-        var len : Int := length(head)
         unfold list(head)
         var prev : Ref := head
         var curr : Ref := head.next
-        var i : Int := 1
+        var i : Int := 0
 
         package list(curr) --* list(head)
         {
             fold list(head)
         }
 
-        while (i != index - 1)
+        while (i < index)
             invariant curr != null ==> list(curr)
-            invariant index < old(length(head))
+            invariant index - i <= length(curr)
             invariant list(curr) --* list(head)
-            invariant length(curr) == len 
-            invariant old(length(head)) - i == length(curr)
-        {
-            len := length(curr)
-            
+        {   
             unfold list(curr)
             prev := curr
             curr := curr.next
@@ -115,6 +109,9 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
             }
         }
 
+        assume index == i - 1
+        assume old(length(head)) - index == length(curr)
+
         res := curr
     }
 }
@@ -123,7 +120,7 @@ method refactoredInsert(head: Ref, index: Int, val: Int) returns (res: Ref)
     requires list(head)
     requires index >= 0 && index <= length(head)
     ensures list(res)
-    // ensures old(length(head)) + 1 == length(res)
+    ensures old(length(head)) + 1 == length(res)
     // ensures forall i : Int :: i >= 0 && i < index ==> old(get(head, i)) == get(res, i)
 {
     var tmp : Ref 
@@ -137,6 +134,8 @@ method refactoredInsert(head: Ref, index: Int, val: Int) returns (res: Ref)
     } else {
         var curr : Ref
         curr := get_reference(head, index - 1)
+
+        assert old(length(head)) == length(curr) + index - 1
         
         unfold list(curr)
         var nextNode : Ref := curr.next
@@ -220,6 +219,14 @@ function length(head: Ref) : Int
     ensures head != null ==> result > 0
 {
     head == null ? 0 : unfolding list(head) in length(head.next) + 1
+}
+
+function segLength(head: Ref, end: Ref) : Int
+    requires head != end ==> list(head)
+    ensures head == end ==> result == 0
+    ensures head != end ==> result > 0
+{
+    head == end ? 0 : unfolding list(head) in length(head.next) + 1
 }
 
 function get(head: Ref, i: Int) : Ref
