@@ -74,10 +74,12 @@ method reverseIter2(head: Ref) returns (res: Ref)
 method get_reference(head: Ref, index: Int) returns (res: Ref)
     requires head != null ==> list(head)
     requires index >= 0 && index < length(head)
-    ensures list(head)
+    ensures list(res)
+    ensures list(res) --* list(head)
 {
-    if (head == null || index == 0) {
+    if (index == 0) {
         res := head
+        package list(res) --* list(head)
     } else {
         unfold list(head)
         var prev : Ref := head
@@ -106,9 +108,38 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
             }
         }
         
-        apply list(curr) --* list(head)
         res := curr
     }
+}
+
+method refactoredInsert(head: Ref, index: Int, val: Int) returns (res: Ref)
+    requires list(head)
+    requires index >= 0 && index <= length(head)
+    ensures list(res)
+{
+    var tmp : Ref 
+    tmp := new(*)
+    tmp.elem := val
+
+    if (index == 0) {
+        tmp.next := head
+        res := tmp
+        fold list(res)
+    } else {
+        var curr : Ref
+        curr := get_reference(head, index - 1)
+        
+        unfold list(curr)
+        var nextNode : Ref := curr.next
+
+        curr.next := tmp
+        tmp.next := nextNode
+        res := head
+
+        fold list(tmp)
+        fold list(curr)
+        apply list(curr) --* list(head)
+    }    
 }
 
 
