@@ -49,7 +49,7 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
         var p : Ref
         
         p := reverseRecur(l.next, r)
-        // assert lengthNodes(p, l.next) + 1 == old(lengthNodes(l.next, r))
+        assert lengthNodes(p, l.next) + 1 == old(lengthNodes(l.next, r))
         
         l.next.next := l
 
