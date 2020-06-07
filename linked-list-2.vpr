@@ -20,6 +20,7 @@ method extendLseg(l: Ref, r: Ref)
         fold lseg(r.next, r.next)
         fold lseg(l, r.next)
     } else {
+        assume false
         unfold lseg(l, r)
         
         var extended : Ref := r.next
@@ -34,34 +35,26 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
     requires acc(l.next) && acc(l.elem) && lseg(l.next, r)
     ensures lseg(res, l) && acc(l.next) && acc(l.elem)
     ensures l.next == r
-    
-    ensures old(l.next) == r ==> lengthNodes(res, l) == 0
-    ensures old(lengthNodes(l.next, r)) == lengthNodes(res, l)
+    ensures old(l.next) == r ==> lengthNodes(res, l) == old(lengthNodes(l.next, r))
+    ensures l.next != r ==> forall i : Int :: i >= 0 && i < lengthNodes(res, l) ==> 
+        old(getNode(l.next, r, i)) == getNode(res, l, lengthNodes(res, l) - 1 - i)
 {
     if (l.next == r) {
         res := l
         l.next := r
         fold lseg(res, l)
     } else {
-        // assume false
         unfold lseg(l.next, r)
         
         var p : Ref
         
         p := reverseRecur(l.next, r)
-        assert lengthNodes(p, l.next) + 1 == old(lengthNodes(l.next, r))
         
         l.next.next := l
-
         res := p
         extendLseg(res, l.next)
-        
         l.next := r
     }
-
-    // assert old(l.next) == r ==> lengthNodes(res, l) == 0
-    // assert len == old(lengthNodes(l.next, r)) + 1
-    // assert old(lengthNodes(l.next, r)) == lengthNodes(res, l)
 }
 
 method reverse(this: Ref)
@@ -123,6 +116,14 @@ function contentNodes(l: Ref, r: Ref) : Seq[Int]
     l == r ? Seq[Int]() : unfolding lseg(l,r) in Seq(l.elem) ++ contentNodes(l.next, r)
 }
 
+function getNode(l: Ref, r: Ref, idx: Int) : Ref
+    requires lseg(l, r)
+    requires idx >= 0 && idx < lengthNodes(l, r)
+    ensures idx == 0 ==> result == l
+{
+    idx == 0 ? l : unfolding lseg(l,r) in getNode(l.next, r, idx - 1)
+}
+
 /* Lists */
 
 
@@ -160,4 +161,11 @@ function content(this: Ref) : Seq[Int]
     requires List(this)
 {
     unfolding acc(List(this)) in contentNodes(this.head, null)    
+}
+
+function get(this: Ref, idx: Int) : Ref
+    requires List(this)
+    requires idx >= 0 && idx < length(this)
+{
+    unfolding acc(List(this)) in getNode(this.head, null, idx)
 }
