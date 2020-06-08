@@ -32,12 +32,14 @@ method extendLseg(l: Ref, r: Ref)
 
 /* Reverses a singly-linked list from the l up to but not including r. Returns the new head of the list. */
 method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
+    requires l != r
     requires acc(l.next) && acc(l.elem) && lseg(l.next, r)
     ensures lseg(res, l) && acc(l.next) && acc(l.elem)
     ensures l.next == r
-    ensures old(l.next) == r ==> lengthNodes(res, l) == old(lengthNodes(l.next, r))
-    ensures l.next != r ==> forall i : Int :: i >= 0 && i < lengthNodes(res, l) ==> 
-        old(getNode(l.next, r, i)) == getNode(res, l, lengthNodes(res, l) - 1 - i)
+    ensures res != r
+    ensures lengthNodes(res, l) == old(lengthNodes(l.next, r))
+    // ensures old(l.next) != r ==> forall i : Int :: i >= 0 && i < lengthNodes(res, l) ==> 
+        // old(getNode(l.next, r, i)) == getNode(res, l, lengthNodes(res, l) - 1 - i)
 {
     if (l.next == r) {
         res := l
@@ -49,12 +51,24 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
         var p : Ref
         
         p := reverseRecur(l.next, r)
-        
+
+        assert p != r
+        assert l.next != r
+        assert l.next.next == r
+        // assert lengthNodes(res, l.next) == old(lengthNodes(l.next, r))
+
         l.next.next := l
         res := p
         extendLseg(res, l.next)
         l.next := r
+        assert lengthNodes(res, l) > 0 ==> old(getNode(l.next, r, 0)) == getNode(res, l, lengthNodes(res, l) - 1)
+
+        // assume lengthNodes(res, l) == old(lengthNodes(l.next, r))
+        // assert forall i : Int :: i >= 0 && i < lengthNodes(res, l) ==> 
+        // old(getNode(l.next, r, i)) == getNode(res, l, lengthNodes(res, l) - 1 - i)
     }
+    
+    // assert lengthNodes(res, l) == old(lengthNodes(l.next, r))
 }
 
 method reverse(this: Ref)

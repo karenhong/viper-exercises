@@ -71,10 +71,11 @@ method reverseIter2(head: Ref) returns (res: Ref)
     }
 }
 
-method get_reference2(head: Ref, index: Int) returns (res: Ref)
+method get_reference1(head: Ref, index: Int) returns (res: Ref)
     requires head != null ==> list(head)
     requires index >= 0 && index < length(head)
     ensures list(res)
+    ensures old(elems(head)[index..]) == elems(res)
     ensures list(res) --* list(head) && elems(head) == old(elems(head)[..index]) ++ old[lhs](elems(res))
 {
     if (index == 0) {
@@ -113,12 +114,12 @@ method get_reference2(head: Ref, index: Int) returns (res: Ref)
     }
 }
 
-method refactoredInsert2(head: Ref, index: Int, val: Int) returns (res: Ref)
+method refactoredInsert1(head: Ref, index: Int, val: Int) returns (res: Ref)
     requires list(head)
     requires index >= 0 && index <= length(head)
     ensures list(res)
-    // ensures old(length(head)) - index == length(res)
-    // ensures old(elems(head)[..index-1]) == elems(res)[..index-1]
+    ensures old(length(head)) + 1 == length(res)
+    ensures elems(res) == old(elems(head)[..index]) ++ Seq(val) ++ old(elems(head)[index..])
 {
     var tmp : Ref 
     tmp := new(*)
@@ -130,39 +131,32 @@ method refactoredInsert2(head: Ref, index: Int, val: Int) returns (res: Ref)
         fold list(res)
     } else {
         var curr : Ref
-        curr := get_reference2(head, index - 1)
+        curr := get_reference1(head, index - 1)
+        assert old(elems(head)[index-1..]) == elems(curr)
 
         unfold list(curr)
-        var lenRest : Int := length(curr.next)
-        var nextNode : Ref := curr.next
         
+        tmp.next := curr.next
         curr.next := tmp
-        tmp.next := nextNode
         res := head
 
         fold list(tmp)
         fold list(curr)
-
-        assert getElem(curr, 1) == val
         
         apply list(curr) --* list(head) && elems(head) == old(elems(head)[..index-1]) ++ old[lhs](elems(curr))
-        // assert old(elems(head))[..1] == elems(res)[..1]
-        assume index < length(res)
-        // assert get(res, index) == tmp
-        // assert getElem(res, index) == val
-        // ++ Seq(val) ++ elems(res)[index + 1..]
     }
-}   
+}
 
-method get_reference(head: Ref, index: Int) returns (res: Ref)
+method get_reference2(head: Ref, index: Int) returns (res: Ref)
     requires head != null ==> list(head)
     requires index >= 0 && index < length(head)
     ensures list(res)
+    ensures old(length(head)) - index == length(res)
+    ensures forall j : Int :: j >= 0 && j < length(res) ==> old(get(head, j + index)) == get(res, j)
     ensures list(res) --* list(head) 
         && length(head) - index == old[lhs](length(res))
         && forall j : Int :: j >= index && j < length(head) ==> get(head, j) == old[lhs](get(res, j - index))
         && forall k : Int :: k >= 0 && k < index ==> get(head, k) == old(get(head, k))
-    
 {
     if (index == 0) {
         res := head
@@ -171,6 +165,7 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
             && forall j : Int :: j >= index && j < length(head) ==> get(head, j) == old[lhs](get(res, j - index))
             && forall k : Int :: k >= 0 && k < index ==> get(head, k) == old(get(head, k))
     } else {
+        assume false
         var prev : Ref := null
         var curr : Ref := head
         var i : Int := 0
@@ -184,7 +179,6 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
             invariant curr != null ==> list(curr)
             invariant i >= 0 && i <= index
             invariant old(length(head)) - i == length(curr)
-            invariant forall j : Int :: j >= i && j < old(length(head)) ==> old(get(head, j)) == get(curr, j - i)
             invariant list(curr) --* list(head)
                 && length(head) - i == old[lhs](length(curr))
                 && forall j : Int :: j >= i && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - i))
@@ -212,15 +206,13 @@ method get_reference(head: Ref, index: Int) returns (res: Ref)
     }
 }
 
-method refactoredInsert(head: Ref, index: Int, val: Int) returns (res: Ref)
+method refactoredInsert2(head: Ref, index: Int, val: Int) returns (res: Ref)
     requires list(head)
     requires index >= 0 && index <= length(head)
     ensures list(res)
-    // ensures old(length(head)) + 1 == length(res)
-    // ensures forall i : Int :: i > index && i < old(length(head)) ==> old(get(head, i)) == get(res, i - index)
-    // ensures getElem(res, index) == val
-    // ensures forall i : Int :: i > index && i < length(res) ==> old(get(head, i + (index - 1))) == get(res, i)
-    // ensures old(elems(head)[..index]) == elems(res)[..index]
+    ensures old(length(head)) + 1 == length(res)
+    ensures forall k : Int :: k >= 0 && k < index ==> old(get(head, k)) == get(res, k)
+    // ensures forall j : Int :: j >= index && j < old(length(head)) ==> old(get(head, j)) == get(res, j + 1)
 {
     var tmp : Ref 
     tmp := new(*)
@@ -232,26 +224,38 @@ method refactoredInsert(head: Ref, index: Int, val: Int) returns (res: Ref)
         fold list(res)
     } else {
         var curr : Ref
-        curr := get_reference(head, index - 1)
-
-        unfold list(curr)
-        var lenRest : Int := length(curr.next)
-        var nextNode : Ref := curr.next
+        curr := get_reference2(head, index - 1)
         
+        unfold list(curr)
+    
+        tmp.next := curr.next
         curr.next := tmp
-        tmp.next := nextNode
         res := head
 
         fold list(tmp)
+        assert getElem(tmp, 0) == val
         fold list(curr)
+
+        // assert old(get(head, index-1)) == get(curr, 0)
+        // assert tmp == get(curr, 1)
+        // assert index < old(length(head)) ==> old(get(head, index)) == get(curr, 2)
+        // assert index+1 < old(length(head)) ==> old(get(head, index+1)) == get(curr, 3)
+        // assert index+2 < old(length(head)) ==> old(get(head, index+2)) == get(curr, 4)
+        // assert index+3 < old(length(head)) ==> old(get(head, index+3)) == get(curr, 5)
         
+        // assert forall j : Int :: j >= index && j < old(length(head)) ==> old(get(head, j)) == get(curr, j + 2 - index)
+
         apply list(curr) --* list(head) 
             && length(head) - (index-1) == old[lhs](length(curr))
             && forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1)))
             && forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k))
-        // assert forall j : Int :: j >= index && j < old(length(head)) ==> old(get(head, j)) == get(res, j + 1)
-        // assert forall j : Int :: j >= index + 1 && j < old(length(head)) ==> old(get(head, j)) == get(res, j + 1)
+        
     }
+
+    assert get(res, index) == tmp
+    assert index < old(length(head))  ==> old(get(head, index)) == get(res, index + 1)
+    assert index+1 < old(length(head))  ==> old(get(head, index+1)) == get(res, index + 2)
+    // assert forall j : Int :: j >= index && j < old(length(head)) ==> old(get(head, j)) == get(res, j + 1)
 }
 
 /* inserts a new node before the node at index and returns the head of the list */
@@ -340,6 +344,7 @@ function get(head: Ref, i: Int) : Ref
 function getElem(head: Ref, i: Int) : Int
     requires acc(list(head))
     requires i >= 0 && i < length(head)
+    ensures i == 0 ==> result == unfolding list(head) in head.elem
 {
     unfolding acc(list(head)) in
         i == 0 ? head.elem : getElem(head.next, i - 1)
@@ -355,6 +360,7 @@ function content(head: Ref) : Seq[Int]
 
 function elems(head: Ref) : Seq[Int]
   requires list(head)
+  ensures length(head) == |result|
 {
   unfolding list(head) in (
     (head.next == null ? Seq(head.elem) :
