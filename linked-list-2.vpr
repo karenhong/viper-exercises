@@ -18,9 +18,8 @@ method extendLseg(l: Ref, r: Ref)
 {
     if (l == r) {
         fold lseg(r.next, r.next)
-        fold lseg(l, r.next)
+        fold lseg(l, r.next) 
     } else {
-        assume false
         unfold lseg(l, r)
         
         var extended : Ref := r.next
@@ -28,6 +27,7 @@ method extendLseg(l: Ref, r: Ref)
 
         fold lseg(l, extended)
     }
+    
 }
 
 /* Reverses a singly-linked list from the l up to but not including r. Returns the new head of the list. */
@@ -36,10 +36,11 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
     requires acc(l.next) && acc(l.elem) && lseg(l.next, r)
     ensures lseg(res, l) && acc(l.next) && acc(l.elem)
     ensures l.next == r
-    ensures res != r
-    ensures lengthNodes(res, l) == old(lengthNodes(l.next, r))
+    
+    // ensures res != r
+    // ensures lengthNodes(res, l) == old(lengthNodes(l.next, r))
     // ensures old(l.next) != r ==> forall i : Int :: i >= 0 && i < lengthNodes(res, l) ==> 
-        // old(getNode(l.next, r, i)) == getNode(res, l, lengthNodes(res, l) - 1 - i)
+    //     old(getNode(l.next, r, i)) == getNode(res, l, lengthNodes(res, l) - 1 - i)r
 {
     if (l.next == r) {
         res := l
@@ -52,18 +53,15 @@ method reverseRecur(l: Ref, r: Ref) returns (res: Ref)
         
         p := reverseRecur(l.next, r)
 
-        assert p != r
-        assert l.next != r
-        assert l.next.next == r
-        // assert lengthNodes(res, l.next) == old(lengthNodes(l.next, r))
+        // assert lengthNodes(p, l.next) == old(lengthNodes(l.next, r)) - 1
 
         l.next.next := l
         res := p
         extendLseg(res, l.next)
         l.next := r
-        assert lengthNodes(res, l) > 0 ==> old(getNode(l.next, r, 0)) == getNode(res, l, lengthNodes(res, l) - 1)
+        // assert old(getNode(l.next, r, 0)) == getNode(res, l, lengthNodes(res, l) - 1)
 
-        // assume lengthNodes(res, l) == old(lengthNodes(l.next, r))
+        // assert lengthNodes(p, l) == old(lengthNodes(l.next, r))
         // assert forall i : Int :: i >= 0 && i < lengthNodes(res, l) ==> 
         // old(getNode(l.next, r, i)) == getNode(res, l, lengthNodes(res, l) - 1 - i)
     }
@@ -117,7 +115,7 @@ method insertNode(l: Ref, index: Int, val: Int) returns (res: Ref)
 function lengthNodes(l: Ref, r: Ref) : Int
     requires lseg(l, r)
     ensures l == r ==> result == 0
-    ensures l != r ==> result > 0
+    ensures l != r ==> result == | contentNodes(l, r) |
 {
     l == r ? 0 : 1 + unfolding lseg(l, r) in lengthNodes(l.next, r)
 }
@@ -125,7 +123,8 @@ function lengthNodes(l: Ref, r: Ref) : Int
 function contentNodes(l: Ref, r: Ref) : Seq[Int]
     requires lseg(l, r)
     ensures  l == r ==> result == Seq[Int]()
-    ensures  l != r ==> 0 < |result| && |result| == lengthNodes(l, r)
+    ensures  l != r ==> 0 < |result|
+    //  && |result| == lengthNodes(l, r)
 {
     l == r ? Seq[Int]() : unfolding lseg(l,r) in Seq(l.elem) ++ contentNodes(l.next, r)
 }
@@ -165,8 +164,7 @@ method insert(this: Ref, index: Int, val: Int)
 
 function length(this: Ref) : Int
     requires List(this)
-    ensures unfolding List(this) in this.head == null ==> result == 0
-    ensures unfolding List(this) in this.head != null ==> result > 0
+    ensures result == | content(this) |
 {
     unfolding List(this) in lengthNodes(this.head, null)
 }

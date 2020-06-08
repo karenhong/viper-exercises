@@ -71,7 +71,7 @@ method reverseIter2(head: Ref) returns (res: Ref)
     }
 }
 
-method get_reference1(head: Ref, index: Int) returns (res: Ref)
+method getReference1(head: Ref, index: Int) returns (res: Ref)
     requires head != null ==> list(head)
     requires index >= 0 && index < length(head)
     ensures list(res)
@@ -131,7 +131,7 @@ method refactoredInsert1(head: Ref, index: Int, val: Int) returns (res: Ref)
         fold list(res)
     } else {
         var curr : Ref
-        curr := get_reference1(head, index - 1)
+        curr := getReference1(head, index - 1)
         assert old(elems(head)[index-1..]) == elems(curr)
 
         unfold list(curr)
@@ -147,7 +147,7 @@ method refactoredInsert1(head: Ref, index: Int, val: Int) returns (res: Ref)
     }
 }
 
-method get_reference2(head: Ref, index: Int) returns (res: Ref)
+method getReference2(head: Ref, index: Int) returns (res: Ref)
     requires head != null ==> list(head)
     requires index >= 0 && index < length(head)
     ensures list(res)
@@ -224,7 +224,7 @@ method refactoredInsert2(head: Ref, index: Int, val: Int) returns (res: Ref)
         fold list(res)
     } else {
         var curr : Ref
-        curr := get_reference2(head, index - 1)
+        curr := getReference2(head, index - 1)
         
         unfold list(curr)
     
@@ -233,11 +233,10 @@ method refactoredInsert2(head: Ref, index: Int, val: Int) returns (res: Ref)
         res := head
 
         fold list(tmp)
-        assert getElem(tmp, 0) == val
         fold list(curr)
 
-        // assert old(get(head, index-1)) == get(curr, 0)
-        // assert tmp == get(curr, 1)
+        assert old(get(head, index-1)) == get(curr, 0)
+        assert tmp == get(curr, 1)
         // assert index < old(length(head)) ==> old(get(head, index)) == get(curr, 2)
         // assert index+1 < old(length(head)) ==> old(get(head, index+1)) == get(curr, 3)
         // assert index+2 < old(length(head)) ==> old(get(head, index+2)) == get(curr, 4)
