@@ -1,0 +1,45 @@
+field elem: Int
+field next: Ref
+
+predicate list(this: Ref) {
+    acc(this.elem) && acc(this.next) && (this.next != null ==> list(this.next)) 
+}
+
+method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
+    requires list(head)
+    requires index >= 0 && index <= length(head)
+{
+    assume index != 0
+    exhale list(head)
+    
+    var curr : Ref
+    inhale list(curr)
+    inhale old(length(head)) - (index-1) == length(curr)
+    
+    inhale list(curr) --* list(head) 
+        && length(head) - (index-1) == old[lhs](length(curr))
+        && forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1)))
+        && forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k))
+
+    apply list(curr) --* list(head) 
+        && length(head) - (index-1) == old[lhs](length(curr))
+        && forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1)))
+        && forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k))
+
+    assert forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k))
+}
+
+function length(head: Ref) : Int
+    requires head != null ==> list(head)
+    ensures head == null ==> result == 0
+    ensures head != null ==> result > 0
+{
+    head == null ? 0 : unfolding list(head) in length(head.next) + 1
+}
+
+function get(head: Ref, i: Int) : Ref
+    requires acc(list(head))
+    requires i >= 0 && i < length(head)
+{
+    i == 0 ? head : unfolding acc(list(head)) in get(head.next, i - 1)
+}
