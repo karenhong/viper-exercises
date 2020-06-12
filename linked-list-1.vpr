@@ -165,7 +165,6 @@ method getReference2(head: Ref, index: Int) returns (res: Ref)
             && forall j : Int :: j >= index && j < length(head) ==> get(head, j) == old[lhs](get(res, j - index))
             && forall k : Int :: k >= 0 && k < index ==> get(head, k) == old(get(head, k))
     } else {
-        assume false
         var prev : Ref := null
         var curr : Ref := head
         var i : Int := 0
