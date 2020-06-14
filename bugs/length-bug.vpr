@@ -20,8 +20,8 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
     inhale old(length(head)) - (index-1) == length(curr)
     inhale list(curr) --* list(head) 
         && length(head) - (index-1) == old[lhs](length(curr))
-        && forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1)))
-        && forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k))
+        && (forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1))))
+        && (forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k)))
 
     unfold list(curr)
 
@@ -36,8 +36,8 @@ method insert(head: Ref, index: Int, val: Int) returns (res: Ref)
 
     apply list(curr) --* list(head) 
         && length(head) - (index-1) == old[lhs](length(curr))
-        && forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1)))
-        && forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k))
+        && (forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1))))
+        && (forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k)))
 }
 
 function length(head: Ref) : Int

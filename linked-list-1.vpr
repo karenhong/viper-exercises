@@ -96,7 +96,7 @@ method getReference1(head: Ref, index: Int) returns (res: Ref)
             invariant curr != null ==> list(curr)
             invariant i >= 1 && i <= index
             invariant old(length(head)) - i == length(curr)
-            invariant curr != null ==> elems(curr) == old(elems(head))[i..]
+            invariant elems(curr) == old(elems(head))[i..]
             invariant list(curr) --* list(head) && elems(head) == old(elems(head)[..i]) ++ old[lhs](elems(curr))
         {   
             unfold list(curr)
@@ -155,33 +155,39 @@ method getReference2(head: Ref, index: Int) returns (res: Ref)
     ensures forall j : Int :: j >= 0 && j < length(res) ==> old(get(head, j + index)) == get(res, j)
     ensures list(res) --* list(head) 
         && length(head) - index == old[lhs](length(res))
-        && forall j : Int :: j >= index && j < length(head) ==> get(head, j) == old[lhs](get(res, j - index))
-        && forall k : Int :: k >= 0 && k < index ==> get(head, k) == old(get(head, k))
+        && (forall j : Int :: j >= index && j < length(head) ==> get(head, j) == old[lhs](get(res, j - index)))
+        && (forall k : Int :: k >= 0 && k < index ==> get(head, k) == old(get(head, k)))
 {
     if (index == 0) {
         res := head
         package list(res) --* list(head)
             && length(head) - index == old[lhs](length(res))
-            && forall j : Int :: j >= index && j < length(head) ==> get(head, j) == old[lhs](get(res, j - index))
-            && forall k : Int :: k >= 0 && k < index ==> get(head, k) == old(get(head, k))
+            && (forall j : Int :: j >= index && j < length(head) ==> get(head, j) == old[lhs](get(res, j - index)))
+            && (forall k : Int :: k >= 0 && k < index ==> get(head, k) == old(get(head, k)))
     } else {
-        var prev : Ref := null
-        var curr : Ref := head
-        var i : Int := 0
+        unfold list(head)
+        var prev : Ref := head
+        var curr : Ref := head.next
+        var i : Int := 1
 
         package list(curr) --* list(head) 
             && length(head) - i == old[lhs](length(curr))
-            && forall j : Int :: j >= i && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - i))
-            && forall k : Int :: k >= 0 && k < i ==> get(head, k) == old(get(head, k))
-
+            && (forall j : Int :: j >= i && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - i)))
+            && (forall k : Int :: k >= 0 && k < i ==> get(head, k) == old(get(head, k))) 
+        {
+            fold list(head)
+        }
+            
+        
         while (i != index)
             invariant curr != null ==> list(curr)
-            invariant i >= 0 && i <= index
+            invariant i >= 1 && i <= index
             invariant old(length(head)) - i == length(curr)
+            invariant forall j : Int :: j >= i && j < old(length(head)) ==> old(get(head, j)) == get(curr, j-i)
             invariant list(curr) --* list(head)
                 && length(head) - i == old[lhs](length(curr))
-                && forall j : Int :: j >= i && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - i))
-                && forall k : Int :: k >= 0 && k < i ==> get(head, k) == old(get(head, k))
+                && (forall j : Int :: j >= i && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - i)))
+                && (forall k : Int :: k >= 0 && k < i ==> get(head, k) == old(get(head, k)))
         {   
             unfold list(curr)
             prev := curr
@@ -190,15 +196,14 @@ method getReference2(head: Ref, index: Int) returns (res: Ref)
 
             package list(curr) --* list(head) 
                 && length(head) - i == old[lhs](length(curr))
-                && forall j : Int :: j >= i && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - i))
-                && forall k : Int :: k >= 0 && k < i ==> get(head, k) == old(get(head, k))
+                && (forall j : Int :: j >= i && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - i)))
+                && (forall k : Int :: k >= 0 && k < i ==> get(head, k) == old(get(head, k)))
             {
                 fold list(prev)
-                assert i >= 0 && i <= index
                 apply list(prev) --* list(head)
                     && length(head) - (i-1) == old[lhs](length(prev))
-                    && forall j : Int :: j >= (i-1) && j < length(head) ==> get(head, j) == old[lhs](get(prev, j - (i-1)))
-                    && forall k : Int :: k >= 0 && k < (i-1) ==> get(head, k) == old(get(head, k))
+                    && (forall j : Int :: j >= (i-1) && j < length(head) ==> get(head, j) == old[lhs](get(prev, j - (i-1))))
+                    && (forall k : Int :: k >= 0 && k < (i-1) ==> get(head, k) == old(get(head, k)))
             }
         }
         res := curr
@@ -245,8 +250,8 @@ method refactoredInsert2(head: Ref, index: Int, val: Int) returns (res: Ref)
 
         apply list(curr) --* list(head) 
             && length(head) - (index-1) == old[lhs](length(curr))
-            && forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1)))
-            && forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k))
+            && (forall j : Int :: j >= (index-1) && j < length(head) ==> get(head, j) == old[lhs](get(curr, j - (index-1))))
+            && (forall k : Int :: k >= 0 && k < (index-1) ==> get(head, k) == old(get(head, k)))
         
     }
 

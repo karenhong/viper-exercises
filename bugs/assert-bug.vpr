@@ -13,12 +13,12 @@ method insert(head: Ref, idx: Int)
     var curr : Ref
     inhale list(curr)
     inhale list(curr) --* list(head) 
-        && forall j : Int :: j >= idx ==> get(head, j) == old[lhs](get(curr, j - idx))
-        && forall k : Int :: k >= 0 && k < idx ==> get(head, k) == old(get(head, k))
+        && (forall j : Int :: j >= idx ==> get(head, j) == old[lhs](get(curr, j - idx)))
+        && (forall k : Int :: k >= 0 && k < idx ==> get(head, k) == old(get(head, k)))
 
     apply list(curr) --* list(head) 
-        && forall j : Int :: j >= idx ==> get(head, j) == old[lhs](get(curr, j - idx))
-        && forall k : Int :: k >= 0 && k < idx ==> get(head, k) == old(get(head, k))
+        && (forall j : Int :: j >= idx ==> get(head, j) == old[lhs](get(curr, j - idx)))
+        && (forall k : Int :: k >= 0 && k < idx ==> get(head, k) == old(get(head, k)))
 
     assert forall k : Int :: k >= 0 && k < idx ==> get(head, k) == old(get(head, k))
 }
